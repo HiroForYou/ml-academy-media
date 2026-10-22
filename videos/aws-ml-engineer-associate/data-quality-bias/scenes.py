@@ -3,7 +3,8 @@ Videos cortos del tema 1.3 (calidad de datos y sesgo). Short videos for topic 1.
 
     MLA_LANG=es manim -r 1280,720 --fps 30 scenes.py DQPipeline
 
-Solo usa Text (sin LaTeX). Uses Text only (no LaTeX).
+Las fórmulas usan MathTex (requiere LaTeX, p. ej. MiKTeX o TeX Live).
+Formulas use MathTex (requires LaTeX, e.g. MiKTeX or TeX Live).
 """
 
 import os
@@ -23,6 +24,7 @@ from manim import (
     Flash,
     Indicate,
     Line,
+    MathTex,
     MoveAlongPath,
     RoundedRectangle,
     Scene,
@@ -67,7 +69,9 @@ TEXT = {
         "both": "≈ 8,6 % de positivos en ambos",
         "bad_split": "El entrenamiento no tiene positivos",
         "smote_title": "SMOTE: ejemplos sintéticos de la clase minoritaria",
-        "formula": "x_nuevo = x_i + λ · (x_vecino − x_i),  λ ∈ [0, 1]",
+        "formula": r"x_{\text{nuevo}} = x_i + \lambda\,(x_{\text{vecino}} - x_i),\quad \lambda \in [0, 1]",
+        "xn": r"x_{\text{vecino}}",
+        "xnew": r"x_{\text{nuevo}}",
         "only_train": "Solo sobre el conjunto de entrenamiento",
         "minority": "minoritaria",
         "synthetic": "sintético",
@@ -90,7 +94,9 @@ TEXT = {
         "both": "≈ 8.6% positives in both",
         "bad_split": "Training has no positives",
         "smote_title": "SMOTE: synthetic minority-class samples",
-        "formula": "x_new = x_i + λ · (x_neighbor − x_i),  λ ∈ [0, 1]",
+        "formula": r"x_{\text{new}} = x_i + \lambda\,(x_{\text{neighbor}} - x_i),\quad \lambda \in [0, 1]",
+        "xn": r"x_{\text{neighbor}}",
+        "xnew": r"x_{\text{new}}",
         "only_train": "Training split only",
         "minority": "minority",
         "synthetic": "synthetic",
@@ -100,6 +106,10 @@ TEXT = {
 
 def label(text, size=24, color=INK, weight="NORMAL"):
     return Text(text, font=FONT, font_size=size, color=color, weight=weight)
+
+
+def math(tex, size=30, color=INK):
+    return MathTex(tex, font_size=size, color=color)
 
 
 def node(text, width=3.0, height=1.0, stroke=INK_SOFT, fill=SURFACE):
@@ -261,18 +271,29 @@ class Smote(Scene):
 
         self.play(FadeIn(title), FadeIn(majority, lag_ratio=0.01), FadeIn(minority), FadeIn(legend), run_time=1.0)
 
-        formula = label(TEXT["formula"], 22, INK_SOFT).to_edge(DOWN, buff=1.0)
+        formula = math(TEXT["formula"], 34, INK_SOFT).to_edge(DOWN, buff=1.0)
         self.play(Write(formula), run_time=0.8)
 
         pairs = [(0, 1, 0.45), (2, 5, 0.6), (3, 4, 0.35), (1, 4, 0.5)]
         synthetic = VGroup()
-        for i, j, lam in pairs:
+        for k, (i, j, lam) in enumerate(pairs):
             a, b = minority[i], minority[j]
             seg = Line(a.get_center(), b.get_center(), color=MUTED, stroke_width=2)
             self.play(Indicate(a, color=ACCENT, scale_factor=1.6), Create(seg), run_time=0.45)
             new = Dot(a.get_center() + lam * (b.get_center() - a.get_center()), radius=0.1, color=OK)
-            self.play(FadeIn(new, scale=0.3), run_time=0.35)
-            self.play(FadeOut(seg), run_time=0.2)
+            if k == 0:
+                # Primera pareja: etiquetas en LaTeX. First pair: LaTeX labels.
+                tags = VGroup(
+                    math("x_i", 28, ACCENT).next_to(a, UP + LEFT, buff=0.08),
+                    math(TEXT["xn"], 28, ACCENT).next_to(b, DOWN + RIGHT, buff=0.08),
+                    math(TEXT["xnew"], 28, OK).next_to(new, RIGHT, buff=0.15),
+                )
+                self.play(FadeIn(new, scale=0.3), FadeIn(tags), run_time=0.5)
+                self.wait(0.8)
+                self.play(FadeOut(seg), FadeOut(tags), run_time=0.3)
+            else:
+                self.play(FadeIn(new, scale=0.3), run_time=0.35)
+                self.play(FadeOut(seg), run_time=0.2)
             synthetic.add(new)
 
         note = label(TEXT["only_train"], 24, ACCENT, "BOLD").to_edge(DOWN, buff=0.4)

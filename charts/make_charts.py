@@ -42,6 +42,8 @@ plt.rcParams.update(
         "figure.facecolor": "white",
         "axes.facecolor": "white",
         "savefig.facecolor": "white",
+        # Fórmulas con mathtext estilo LaTeX (sin instalar TeX). LaTeX-style mathtext formulas (no TeX install).
+        "mathtext.fontset": "cm",
     }
 )
 
@@ -60,13 +62,15 @@ TEXT = {
         "rate": "Tasa de impago (q)",
         "rows_title": "Representación",
         "rate_title": "Etiquetas positivas",
-        "ci_note": "CI = (n_a − n_d)/(n_a + n_d) = +0,72\nla faceta d está subrepresentada",
-        "dpl_note": "DPL = q_a − q_d = −0,04\nla faceta d tiene más impagos",
+        "ci_formula": r"$\mathrm{CI} = \dfrac{n_a - n_d}{n_a + n_d} = +0{,}72$",
+        "ci_note": "la faceta d está subrepresentada",
+        "dpl_formula": r"$\mathrm{DPL} = q_a - q_d = -0{,}04$",
+        "dpl_note": "la faceta d tiene más impagos",
         "income": "Ingreso anual",
         "count": "Solicitudes",
         "before": "Antes: outliers ×50 (escala logarítmica)",
         "after": "Después: recorte a los límites IQR",
-        "bounds": "Límites IQR\nQ1 − 1,5·IQR · Q3 + 1,5·IQR",
+        "bounds": "Límites IQR\n" + r"$Q_1 - 1{,}5\,\mathrm{IQR},\ \ Q_3 + 1{,}5\,\mathrm{IQR}$",
         "outliers": "outliers",
         "metric": "Valor en prueba",
         "metrics": ["Accuracy", "Balanced acc.", "Recall", "F1", "ROC AUC"],
@@ -85,13 +89,15 @@ TEXT = {
         "rate": "Default rate (q)",
         "rows_title": "Representation",
         "rate_title": "Positive labels",
-        "ci_note": "CI = (n_a − n_d)/(n_a + n_d) = +0.72\nfacet d is underrepresented",
-        "dpl_note": "DPL = q_a − q_d = −0.04\nfacet d has more defaults",
+        "ci_formula": r"$\mathrm{CI} = \dfrac{n_a - n_d}{n_a + n_d} = +0.72$",
+        "ci_note": "facet d is underrepresented",
+        "dpl_formula": r"$\mathrm{DPL} = q_a - q_d = -0.04$",
+        "dpl_note": "facet d has more defaults",
         "income": "Annual income",
         "count": "Applications",
         "before": "Before: ×50 outliers (log scale)",
         "after": "After: clipped to IQR bounds",
-        "bounds": "IQR bounds\nQ1 − 1.5·IQR · Q3 + 1.5·IQR",
+        "bounds": "IQR bounds\n" + r"$Q_1 - 1.5\,\mathrm{IQR},\ \ Q_3 + 1.5\,\mathrm{IQR}$",
         "outliers": "outliers",
         "metric": "Test value",
         "metrics": ["Accuracy", "Balanced acc.", "Recall", "F1", "ROC AUC"],
@@ -148,10 +154,11 @@ def chart_bias_ci_dpl(t, out):
     for b, v in zip(b1, rows):
         ax1.text(b.get_x() + b.get_width() / 2, v + 180, f"{v:,}".replace(",", "." if t["decimal"] == "," else ","),
                  ha="center", fontsize=11, fontweight="bold")
-    ax1.set_ylim(0, 11500)
+    ax1.set_ylim(0, 13500)
     ax1.set_title(t["rows_title"], fontsize=11.5, color=INK, pad=10, fontweight="bold")
     ax1.set_ylabel(t["rows"])
-    ax1.text(0.97, 0.95, t["ci_note"], transform=ax1.transAxes, ha="right", va="top", fontsize=9, color=ACCENT)
+    ax1.text(0.97, 0.97, t["ci_formula"], transform=ax1.transAxes, ha="right", va="top", fontsize=13, color=ACCENT)
+    ax1.text(0.97, 0.79, t["ci_note"], transform=ax1.transAxes, ha="right", va="top", fontsize=9, color=INK_SOFT)
     clean_axes(ax1)
 
     b2 = ax2.bar(facets, rates, color=[GRAY, ACCENT], width=0.55, zorder=3)
@@ -161,7 +168,8 @@ def chart_bias_ci_dpl(t, out):
     ax2.yaxis.set_major_formatter(lambda v, _: fmt(v, t, 3))
     ax2.set_title(t["rate_title"], fontsize=11.5, color=INK, pad=10, fontweight="bold")
     ax2.set_ylabel(t["rate"])
-    ax2.text(0.03, 0.95, t["dpl_note"], transform=ax2.transAxes, ha="left", va="top", fontsize=9, color=ACCENT)
+    ax2.text(0.03, 0.97, t["dpl_formula"], transform=ax2.transAxes, ha="left", va="top", fontsize=13, color=ACCENT)
+    ax2.text(0.03, 0.86, t["dpl_note"], transform=ax2.transAxes, ha="left", va="top", fontsize=9, color=INK_SOFT)
     clean_axes(ax2)
 
     fig.tight_layout(w_pad=3)

@@ -8,12 +8,13 @@ This project generates the figures and short videos that illustrate [ML Academy]
 
 Every asset is generated in Spanish and English.
 
-Everything is **local** for now: generated files are not uploaded to any repository or to YouTube.
+**Charts** are stored in the repository, in `charts/images/`. **Videos** are local only for now: they are not uploaded to any repository or to YouTube.
 
 ## Requirements
 
 - Python 3.10 or later.
-- No LaTeX needed: the scenes only use `Text`.
+- **For videos, a LaTeX distribution** (MiKTeX on Windows, TeX Live on macOS or Linux): formulas are written with `MathTex`. If MiKTeX asks to install packages, turn on automatic installation: `initexmf --set-config-value=[MPM]AutoInstall=1`.
+- Charts don't need LaTeX: their formulas use matplotlib mathtext with the Computer Modern font.
 - No system ffmpeg needed: Manim bundles PyAV.
 
 ```bash
@@ -31,7 +32,7 @@ python scripts/render_all.py --only videos    # videos only (~1 minute)
 python scripts/render_all.py --no-sync        # don't copy to the web
 ```
 
-1. Files are written to `output/<course>/<topic>/`.
+1. Charts are generated in `charts/images/<course>/<topic>/` (in the repository). Videos are generated in `output/<course>/<topic>/`, which is gitignored.
 2. They are then copied to `../ml-academy-web/public/media/<course>/<topic>/`, a folder the web ignores in git.
 3. The web's `Figure` component only shows an asset when the file exists, so the site works the same without them.
 
@@ -39,6 +40,7 @@ python scripts/render_all.py --no-sync        # don't copy to the web
 
 ```text
 charts/make_charts.py                     # one function per chart; text in TEXT[lang]
+charts/images/<course>/<topic>/           # generated PNGs (ES and EN)
 videos/<course>/<topic>/scenes.py         # Manim scenes; text in TEXT based on MLA_LANG
 scripts/render_video.py                   # renders one scene through Manim's API
 scripts/render_all.py                     # runs everything and syncs to the web

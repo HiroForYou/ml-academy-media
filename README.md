@@ -8,12 +8,13 @@ Este proyecto genera las figuras y los videos cortos que ilustran los temas de [
 
 Cada medio se genera en español y en inglés.
 
-Por ahora todo es **local**: los archivos generados no se suben a ningún repositorio ni a YouTube.
+Los **gráficos** se guardan en el repositorio, en `charts/images/`. Los **videos** son solo locales por ahora: no se suben a ningún repositorio ni a YouTube.
 
 ## Requisitos
 
 - Python 3.10 o superior.
-- No hace falta LaTeX: las escenas solo usan `Text`.
+- **Para los videos, una distribución de LaTeX** (MiKTeX en Windows, TeX Live en macOS o Linux): las fórmulas se escriben con `MathTex`. Si MiKTeX pide instalar paquetes, activa la instalación automática: `initexmf --set-config-value=[MPM]AutoInstall=1`.
+- Los gráficos no necesitan LaTeX: sus fórmulas usan *mathtext* de matplotlib con la fuente Computer Modern.
 - No hace falta ffmpeg del sistema: Manim incluye PyAV.
 
 ```bash
@@ -31,7 +32,7 @@ python scripts/render_all.py --only videos    # solo videos (~1 minuto)
 python scripts/render_all.py --no-sync        # no copiar al web
 ```
 
-1. Los archivos se generan en `output/<curso>/<tema>/`.
+1. Los gráficos se generan en `charts/images/<curso>/<tema>/` (en el repositorio). Los videos se generan en `output/<curso>/<tema>/`, que está en `.gitignore`.
 2. Luego se copian a `../ml-academy-web/public/media/<curso>/<tema>/`, una carpeta que el web ignora en git.
 3. El componente `Figure` del web solo muestra un medio si el archivo existe, así que el sitio funciona igual sin ellos.
 
@@ -39,6 +40,7 @@ python scripts/render_all.py --no-sync        # no copiar al web
 
 ```text
 charts/make_charts.py                     # una función por gráfico; textos en TEXT[lang]
+charts/images/<curso>/<tema>/             # PNG generados (ES y EN)
 videos/<curso>/<tema>/scenes.py           # escenas de Manim; textos en TEXT según MLA_LANG
 scripts/render_video.py                   # renderiza una escena con la API de Manim
 scripts/render_all.py                     # orquesta todo y sincroniza con el web

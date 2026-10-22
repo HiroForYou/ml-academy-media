@@ -6,8 +6,9 @@ Renders charts and videos in ES and EN and copies them to the website.
     python scripts/render_all.py --only charts   # solo gráficos / charts only
     python scripts/render_all.py --no-sync       # no copiar al web / don't copy to the web
 
-Salida / output:  output/<course>/<topic>/<name>.<lang>.<ext>
-Web:              ../ml-academy-web/public/media/<course>/<topic>/<name>.<lang>.<ext>
+Gráficos / charts: charts/images/<course>/<topic>/<name>.<lang>.png   (en el repo / committed)
+Videos:            output/<course>/<topic>/<name>.<lang>.mp4           (local, .gitignore)
+Web:               ../ml-academy-web/public/media/<course>/<topic>/<name>.<lang>.<ext>
 """
 
 import argparse
@@ -39,8 +40,12 @@ def run(cmd):
     subprocess.run([str(c) for c in cmd], check=True)
 
 
+CHART_IMAGES = ROOT / "charts" / "images"
+VIDEO_OUTPUT = ROOT / "output"
+
+
 def render_charts(lang):
-    out = ROOT / "output" / CHART_TOPIC[0] / CHART_TOPIC[1]
+    out = CHART_IMAGES / CHART_TOPIC[0] / CHART_TOPIC[1]
     out.mkdir(parents=True, exist_ok=True)
     tmp = ROOT / "output" / "_charts" / lang
     run([sys.executable, ROOT / "charts" / "make_charts.py", "--lang", lang, "--out", tmp])
@@ -51,27 +56,29 @@ def render_charts(lang):
 def render_videos(lang):
     for (course, topic), scenes in VIDEOS.items():
         scene_file = ROOT / "videos" / course / topic / "scenes.py"
-        out = ROOT / "output" / course / topic
+        out = VIDEO_OUTPUT / course / topic
         for name, cls in scenes.items():
             run([sys.executable, ROOT / "scripts" / "render_video.py", "--lang", lang, "--file", scene_file,
                  "--scene", cls, "--out", out / f"{name}.{lang}.mp4"])
 
 
 def sync():
-    src = ROOT / "output"
-    for course_dir in src.iterdir():
-        if course_dir.name.startswith("_"):
+    # Copia gráficos (charts/images) y videos (output) al web. Copies charts and videos to the web.
+    for src in (CHART_IMAGES, VIDEO_OUTPUT):
+        if not src.exists():
             continue
-        for topic_dir in course_dir.iterdir():
-            if topic_dir.name.startswith("_"):
+        for course_dir in src.iterdir():
+            if course_dir.name.startswith("_") or not course_dir.is_dir():
                 continue
-            dest = WEB_MEDIA / course_dir.name / topic_dir.name
-            dest.mkdir(parents=True, exist_ok=True)
-            for f in topic_dir.iterdir():
-                if not f.is_file():
+            for topic_dir in course_dir.iterdir():
+                if topic_dir.name.startswith("_") or not topic_dir.is_dir():
                     continue
-                shutil.copy2(f, dest / f.name)
-                print(f"  -> {dest / f.name}")
+                dest = WEB_MEDIA / course_dir.name / topic_dir.name
+                dest.mkdir(parents=True, exist_ok=True)
+                for f in topic_dir.iterdir():
+                    if f.is_file() and f.suffix in (".png", ".mp4"):
+                        shutil.copy2(f, dest / f.name)
+                        print(f"  -> {dest / f.name}")
 
 
 def main():
