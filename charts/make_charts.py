@@ -1,6 +1,6 @@
 """
-Genera los gráficos estáticos de cada tema, en español e inglés.
-Generates each topic's static charts, in Spanish and English.
+Gráficos del tema 1.3 (calidad de datos y sesgo), en español e inglés.
+Charts for topic 1.3 (data quality and bias), in Spanish and English.
 
     python charts/make_charts.py --lang es --out output/aws-ml-engineer-associate/data-quality-bias
 
@@ -8,47 +8,11 @@ Cada gráfico es una función independiente; los textos viven en TEXT[lang].
 Each chart is an independent function; on-screen text lives in TEXT[lang].
 """
 
-import argparse
 import os
 
-import matplotlib
+import numpy as np
 
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
-from matplotlib.patches import Patch  # noqa: E402
-
-# Paleta del sitio / site palette
-INK = "#111114"
-INK_SOFT = "#3d3d45"
-MUTED = "#6a6a74"
-SURFACE = "#f3f3f5"
-RULE = "#e2e2e6"
-ACCENT = "#b3132b"
-OK = "#1f7a4d"
-GRAY = "#c9c9cf"
-
-plt.rcParams.update(
-    {
-        "font.family": "sans-serif",
-        "font.sans-serif": ["Segoe UI", "Helvetica Neue", "Arial", "DejaVu Sans"],
-        "font.size": 11,
-        "axes.edgecolor": RULE,
-        "axes.linewidth": 0.8,
-        "text.color": INK,
-        "axes.labelcolor": INK_SOFT,
-        "xtick.color": INK_SOFT,
-        "ytick.color": INK_SOFT,
-        "figure.facecolor": "white",
-        "axes.facecolor": "white",
-        "savefig.facecolor": "white",
-        # Fórmulas con mathtext estilo LaTeX (sin instalar TeX). LaTeX-style mathtext formulas (no TeX install).
-        "mathtext.fontset": "cm",
-    }
-)
-
-DPI = 200
-WIDTH_IN = 8.0  # 8 in x 200 dpi = 1600 px
+from style import ACCENT, DPI, GRAY, INK, INK_SOFT, MUTED, OK, RULE, WIDTH_IN, clean_axes, cli, fmt, plt
 
 TEXT = {
     "es": {
@@ -106,18 +70,6 @@ TEXT = {
         "decimal": ".",
     },
 }
-
-
-def clean_axes(ax):
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["left"].set_color(RULE)
-    ax.spines["bottom"].set_color(RULE)
-    ax.tick_params(length=3, labelsize=9.5)
-
-
-def fmt(value, t, digits=1, suffix=""):
-    return f"{value:.{digits}f}".replace(".", t["decimal"]) + suffix
 
 
 # ─── 1. Desbalance de clases / class imbalance ─────────────────────────────────
@@ -255,16 +207,5 @@ def chart_imbalance_metrics(t, out):
 CHARTS = [chart_class_imbalance, chart_bias_ci_dpl, chart_outliers_iqr, chart_imbalance_metrics]
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--lang", choices=TEXT, default=os.environ.get("MLA_LANG", "es"))
-    parser.add_argument("--out", required=True)
-    args = parser.parse_args()
-    os.makedirs(args.out, exist_ok=True)
-    for chart in CHARTS:
-        chart(TEXT[args.lang], args.out)
-    print(f"{len(CHARTS)} charts ({args.lang}) -> {args.out}")
-
-
 if __name__ == "__main__":
-    main()
+    cli(TEXT, CHARTS)

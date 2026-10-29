@@ -7,7 +7,10 @@ Las fórmulas usan MathTex (requiere LaTeX, p. ej. MiKTeX o TeX Live).
 Formulas use MathTex (requires LaTeX, e.g. MiKTeX or TeX Live).
 """
 
-import os
+# Nombre publicado -> clase de escena. Published name -> scene class.
+VIDEOS = {"dq-pipeline": "DQPipeline", "stratified-split": "StratifiedSplit", "smote": "Smote"}
+
+import os  # noqa: E402
 
 import numpy as np
 from manim import (
