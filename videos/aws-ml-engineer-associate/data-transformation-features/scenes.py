@@ -12,12 +12,12 @@ from pathlib import Path  # noqa: E402
 
 import numpy as np  # noqa: E402
 from manim import (  # noqa: E402
-    DOWN, LEFT, RIGHT, UP, Arrow, Brace, Create, Cross, FadeIn, FadeOut, Indicate, RoundedRectangle, Scene,
+    DOWN, LEFT, RIGHT, UP, Arrow, Brace, Create, Cross, FadeIn, FadeOut, Indicate, RoundedRectangle,
     VGroup, Write,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from style import ACCENT, AMBER, INK, INK_SOFT, MUTED, OK, SURFACE, label, math, pick, tex_num  # noqa: E402
+from style import PacedScene, ACCENT, AMBER, INK, INK_SOFT, MUTED, OK, SURFACE, label, math, pick, tex_num  # noqa: E402
 
 TEXT = pick({
     "es": {
@@ -61,7 +61,7 @@ def cell(value, stroke=INK_SOFT, fill=SURFACE):
     return VGroup(box, label(str(value), 22, INK).move_to(box))
 
 
-class FitOnTrain(Scene):
+class FitOnTrain(PacedScene):
     def construct(self):
         title = label(TEXT["title"], 28, INK, "BOLD").to_edge(UP, buff=0.45)
         values = TRAIN + VAL + TEST

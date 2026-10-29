@@ -5,7 +5,11 @@ Videos cortos del tema 1.1 (recolectar y almacenar datos). Short videos for topi
 """
 
 # Nombre publicado -> clase de escena. Published name -> scene class.
-VIDEOS = {"stream-to-s3": "StreamToS3", "feature-store-event-time": "FeatureStoreEventTime"}
+VIDEOS = {
+    "stream-to-s3": "StreamToS3",
+    "feature-store-event-time": "FeatureStoreEventTime",
+    "athena-partitions": "AthenaPartitions",
+}
 
 import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
@@ -13,12 +17,14 @@ from pathlib import Path  # noqa: E402
 import numpy as np  # noqa: E402
 from manim import (  # noqa: E402
     DOWN, LEFT, RIGHT, UP, Arrow, Create, Cross, Dot, FadeIn, FadeOut, Indicate, Line, MoveAlongPath,
-    Rectangle, RoundedRectangle, Scene, Transform, VGroup,
+    Rectangle, RoundedRectangle, Transform, VGroup,
 )
+from manim import DashedVMobject  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from style import PacedScene  # noqa: E402
 from style import (  # noqa: E402
-    ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, SURFACE, label, node, pick,
+    ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, SURFACE, icon_node, icon_title, label, node, pick, pulse,
 )
 
 TEXT = pick({
@@ -75,17 +81,19 @@ TEXT = pick({
 })
 
 
-class StreamToS3(Scene):
+class StreamToS3(PacedScene):
     def construct(self):
-        app = node(TEXT["app"], 2.2, 1.0, size=20).move_to(LEFT * 5.6 + UP * 0.9)
-        app_sub = label(TEXT["events"], 16, MUTED).next_to(app, DOWN, buff=0.15)
+        app = icon_node("aws/application", TEXT["app"], TEXT["events"], 2.7, 1.1, stroke=INK_SOFT, title_size=17,
+                        desc_size=14, icon_height=0.5).move_to(LEFT * 5.6 + UP * 0.9)
+        app_sub = VGroup()
 
         kds_box = RoundedRectangle(width=3.0, height=2.3, corner_radius=0.12, stroke_color=INK_SOFT, stroke_width=2)
         kds_box.set_fill(SURFACE, opacity=1).move_to(LEFT * 2.2 + UP * 0.9)
-        kds_title = label(TEXT["kds"], 18, INK, "BOLD", max_width=2.8).next_to(kds_box.get_top(), DOWN, buff=0.14)
+        kds_title = icon_title("aws/kinesis-data-streams", TEXT["kds"], 16, max_width=2.8).next_to(
+            kds_box.get_top(), DOWN, buff=0.12)
         lanes = VGroup()
         for i in range(3):
-            y = kds_box.get_center()[1] + 0.25 - i * 0.5
+            y = kds_box.get_center()[1] + 0.12 - i * 0.48
             lane = Line([kds_box.get_left()[0] + 0.25, y, 0], [kds_box.get_right()[0] - 0.25, y, 0], color=GRAY,
                         stroke_width=6)
             tag = label(f"{TEXT['shard']} {i + 1}", 12, MUTED).next_to(lane, UP, buff=0.04).align_to(lane, LEFT)
@@ -93,19 +101,21 @@ class StreamToS3(Scene):
 
         fh_box = RoundedRectangle(width=3.0, height=2.3, corner_radius=0.12, stroke_color=INK_SOFT, stroke_width=2)
         fh_box.set_fill(SURFACE, opacity=1).move_to(RIGHT * 1.6 + UP * 0.9)
-        fh_title = label(TEXT["firehose"], 18, INK, "BOLD", max_width=2.8).next_to(fh_box.get_top(), DOWN, buff=0.14)
+        fh_title = icon_title("aws/data-firehose", TEXT["firehose"], 16, max_width=2.8).next_to(
+            fh_box.get_top(), DOWN, buff=0.12)
         buf_frame = Rectangle(width=2.3, height=0.32, stroke_color=INK_SOFT, stroke_width=1.5).move_to(
-            fh_box.get_center() + UP * 0.05)
+            fh_box.get_center() + DOWN * 0.08)
         buf_lbl = label(TEXT["buffer"], 13, MUTED).next_to(buf_frame, DOWN, buff=0.08)
         convert = label(TEXT["convert"], 16, ACCENT, "BOLD").next_to(buf_lbl, DOWN, buff=0.12)
-        schema = node(TEXT["schema"], 3.0, 0.6, stroke=MUTED, fill="#ffffff", size=15).next_to(fh_box, DOWN, buff=0.55)
+        schema = icon_node("aws/glue", TEXT["schema"], None, 3.4, 0.75, stroke=MUTED, fill="#ffffff", title_size=14,
+                           icon_height=0.45).next_to(fh_box, DOWN, buff=0.5)
         schema_arrow = Arrow(schema.get_top(), fh_box.get_bottom(), buff=0.06, color=MUTED, stroke_width=2.5)
 
         s3_box = RoundedRectangle(width=3.1, height=2.3, corner_radius=0.12, stroke_color=OK, stroke_width=2.2)
-        s3_box.set_fill("#ffffff", opacity=1).move_to(RIGHT * 5.3 + UP * 0.9)
-        s3_title = label(TEXT["s3"], 18, INK, "BOLD").next_to(s3_box.get_top(), DOWN, buff=0.14)
-        raw_lbl = label(TEXT["raw"], 13, INK_SOFT).move_to(s3_box.get_center() + UP * 0.25)
-        cur_lbl = label(TEXT["curated"], 13, INK_SOFT).move_to(s3_box.get_center() + DOWN * 0.45)
+        s3_box.set_fill("#ffffff", opacity=1).move_to(RIGHT * 5.2 + UP * 0.9)
+        s3_title = icon_title("aws/s3", TEXT["s3"], 16).next_to(s3_box.get_top(), DOWN, buff=0.12)
+        raw_lbl = label(TEXT["raw"], 13, INK_SOFT).move_to(s3_box.get_center() + UP * 0.12)
+        cur_lbl = label(TEXT["curated"], 13, INK_SOFT).move_to(s3_box.get_center() + DOWN * 0.55)
         for lbl in (raw_lbl, cur_lbl):
             lbl.align_to(s3_box, LEFT).shift(RIGHT * 0.2)
 
@@ -154,7 +164,7 @@ class StreamToS3(Scene):
         empty = fill.copy().stretch_to_fit_width(0.01).align_to(buf_frame, LEFT)
         self.play(Transform(fill, empty), pq.animate.next_to(cur_lbl, RIGHT, buff=0.12),
                   js.animate.next_to(raw_lbl, RIGHT, buff=0.12), run_time=0.8)
-        self.play(Indicate(s3_box, color=OK, scale_factor=1.04), run_time=0.5)
+        self.play(pulse(s3_box, OK), run_time=0.6)
 
         # La retención de Kinesis expira; S3 conserva todo. Kinesis retention expires; S3 keeps everything.
         retention = label(TEXT["retention"], 21, ACCENT, max_width=12.5).to_edge(DOWN, buff=1.5)
@@ -165,7 +175,7 @@ class StreamToS3(Scene):
         self.wait(1.2)
 
 
-class FeatureStoreEventTime(Scene):
+class FeatureStoreEventTime(PacedScene):
     RECORDS = [("10:00", "3", False), ("10:05", "5", False), ("09:55", "2", True)]
 
     def record(self, time, value, late):
@@ -181,13 +191,13 @@ class FeatureStoreEventTime(Scene):
 
         online = RoundedRectangle(width=4.6, height=1.5, corner_radius=0.12, stroke_color=OK, stroke_width=2.2)
         online.set_fill(SURFACE, opacity=1).move_to(RIGHT * 2.9 + UP * 1.5)
-        on_t = label(TEXT["online"], 20, INK, "BOLD").next_to(online.get_top(), DOWN, buff=0.12).align_to(online, LEFT).shift(RIGHT * 0.2)
-        on_s = label(TEXT["online_sub"], 14, MUTED).next_to(on_t, RIGHT, buff=0.2).align_to(on_t, DOWN)
+        on_t = icon_title("aws/sagemaker-ai", TEXT["online"], 20, icon_height=0.36).next_to(online.get_top(), DOWN, buff=0.12).align_to(online, LEFT).shift(RIGHT * 0.2)
+        on_s = label(TEXT["online_sub"], 14, MUTED).next_to(on_t, RIGHT, buff=0.16).align_to(on_t[1], DOWN)
 
         offline = RoundedRectangle(width=4.6, height=2.75, corner_radius=0.12, stroke_color=INK_SOFT, stroke_width=2.2)
         offline.set_fill(SURFACE, opacity=1).move_to(RIGHT * 2.9 + DOWN * 1.35)
-        off_t = label(TEXT["offline"], 20, INK, "BOLD").next_to(offline.get_top(), DOWN, buff=0.12).align_to(offline, LEFT).shift(RIGHT * 0.2)
-        off_s = label(TEXT["offline_sub"], 14, MUTED).next_to(off_t, DOWN, buff=0.06).align_to(off_t, LEFT)
+        off_t = icon_title("aws/s3", TEXT["offline"], 20, icon_height=0.36).next_to(offline.get_top(), DOWN, buff=0.12).align_to(offline, LEFT).shift(RIGHT * 0.2)
+        off_s = label(TEXT["offline_sub"], 14, MUTED).next_to(off_t, DOWN, buff=0.06).align_to(off_t[1], LEFT)
 
         self.play(FadeIn(title), FadeIn(inc), FadeIn(online), FadeIn(on_t), FadeIn(on_s), FadeIn(offline),
                   FadeIn(off_t), FadeIn(off_s), run_time=0.8)
@@ -205,7 +215,7 @@ class FeatureStoreEventTime(Scene):
 
             # Offline: siempre se anexa. Offline: always appended.
             row = rec.copy()
-            row_target = offline.get_top() + DOWN * (1.0 + 0.55 * i)
+            row_target = offline.get_top() + DOWN * (1.1 + 0.55 * i)
             self.play(row.animate.scale(0.82).move_to(row_target), run_time=0.6)
             rows.append(row)
 
@@ -230,4 +240,107 @@ class FeatureStoreEventTime(Scene):
 
         take = label(TEXT["takeaway"], 24, OK, "BOLD").to_edge(DOWN, buff=0.3)
         self.play(FadeIn(take), run_time=0.4)
+        self.wait(1.2)
+
+
+ATHENA = pick({
+    "es": {
+        "title": "Athena: particiones y datos escaneados",
+        "scanned": "datos escaneados",
+        "q1": "FROM eventos",
+        "q2": "… WHERE month = 10",
+        "c1": "Sin filtro, Athena escanea todos los objetos",
+        "c2": "Con WHERE por partición lee solo month=10: menos datos, menos costo",
+        "c4": "Partición nueva: MSCK REPAIR TABLE o ALTER TABLE ADD PARTITION",
+        "c5": "Con partition projection no se registran",
+        "projection": "projection",
+        "note": "Ilustrativo: 10 GB por partición",
+    },
+    "en": {
+        "title": "Athena: partitions and data scanned",
+        "scanned": "data scanned",
+        "q1": "FROM events",
+        "q2": "… WHERE month = 10",
+        "c1": "Without a filter, Athena scans every object",
+        "c2": "With a partition WHERE it reads only month=10: less data, lower cost",
+        "c4": "New partition: MSCK REPAIR TABLE or ALTER TABLE ADD PARTITION",
+        "c5": "With partition projection, nothing to register",
+        "projection": "projection",
+        "note": "Illustrative: 10 GB per partition",
+    },
+})
+
+
+class AthenaPartitions(PacedScene):
+    MONTHS = ["07", "08", "09", "10"]
+    COLS = [-4.4, -3.0, -1.6, -0.2, 1.2]  # x de cada hueco de día / x of each day slot
+    ROW_Y = [1.6, 0.7, -0.2, -1.1]
+
+    def part_box(self, x, y, fill=SURFACE, stroke=INK_SOFT):
+        box = RoundedRectangle(width=1.2, height=0.62, corner_radius=0.08, stroke_color=stroke, stroke_width=2)
+        box.set_fill(fill, opacity=1).move_to([x, y, 0])
+        return box
+
+    def construct(self):
+        title = icon_title("aws/athena", ATHENA["title"], 24, icon_height=0.6, max_width=12.6).to_edge(UP, buff=0.35)
+        s3_head = icon_title("aws/s3", "S3", 16, MUTED, icon_height=0.42).move_to([-5.5, 2.45, 0])
+
+        rows = []
+        row_lbls = VGroup()
+        for m, y in zip(self.MONTHS, self.ROW_Y):
+            row_lbls.add(label(f"month={m}", 16, MUTED).move_to([-6.1, y, 0]))
+            rows.append([self.part_box(x, y) for x in self.COLS[:3]])
+        # Consulta y medidor a la derecha. Query and meter on the right.
+        q_box = RoundedRectangle(width=4.2, height=0.62, corner_radius=0.08, stroke_color=INK_SOFT, stroke_width=2)
+        q_box.set_fill("#ffffff", opacity=1).move_to([4.6, 1.6, 0])
+        q = label(ATHENA["q1"], 17, INK).move_to(q_box)
+        meter_lbl = label(ATHENA["scanned"], 17, MUTED).move_to([4.6, 0.55, 0])
+        frame = Rectangle(width=3.6, height=0.4, stroke_color=INK_SOFT, stroke_width=2).move_to([4.6, 0.0, 0])
+        fill = Rectangle(width=0.01, height=0.32, stroke_width=0).set_fill(AMBER, 1)
+        fill.align_to(frame, LEFT).shift(RIGHT * 0.04).set_y(frame.get_center()[1])
+        value = label("120 GB", 28, ACCENT, "BOLD").move_to([4.6, -0.75, 0])
+        self.add(fill)
+        grid = VGroup(*[b for r in rows for b in r])
+        self.play(FadeIn(title), FadeIn(s3_head), FadeIn(row_lbls), FadeIn(grid), FadeIn(q_box), FadeIn(q), FadeIn(meter_lbl),
+                  FadeIn(frame), run_time=0.9)
+
+        # 1. Sin poda: se escanean las cuatro filas. 1. No pruning: all four rows are scanned.
+        cap = label(ATHENA["c1"], 21, INK_SOFT, max_width=12.2).to_edge(DOWN, buff=0.75)
+        self.play(FadeIn(cap), run_time=0.5)
+        for i, r in enumerate(rows):
+            new_fill = Rectangle(width=3.5 * (i + 1) / 4, height=0.32, stroke_width=0).set_fill(AMBER, 1)
+            new_fill.align_to(frame, LEFT).shift(RIGHT * 0.04).set_y(frame.get_center()[1])
+            extra = [FadeIn(value)] if i == 3 else []
+            self.play(*[b.animate.set_fill(AMBER, 1) for b in r], Transform(fill, new_fill), *extra, run_time=0.5)
+
+        # 2. Con WHERE sobre la partición solo se lee month=10. 2. With a partition WHERE only month=10 is read.
+        cap2 = label(ATHENA["c2"], 21, INK_SOFT, max_width=12.2).to_edge(DOWN, buff=0.75)
+        reset = Rectangle(width=0.01, height=0.32, stroke_width=0).set_fill(OK, 1)
+        reset.align_to(frame, LEFT).shift(RIGHT * 0.04).set_y(frame.get_center()[1])
+        self.play(FadeOut(cap), *[b.animate.set_fill(SURFACE, 1).set_stroke(INK_SOFT) for r in rows for b in r],
+                  Transform(fill, reset), FadeOut(value),
+                  run_time=0.6)
+        self.play(FadeIn(cap2), Transform(q, label(ATHENA["q2"], 17, ACCENT, "BOLD").move_to(q_box)), run_time=0.6)
+        dim = [b.animate.set_opacity(0.35) for r in rows[:3] for b in r]
+        low = Rectangle(width=3.5 * 0.25, height=0.32, stroke_width=0).set_fill(OK, 1)
+        low.align_to(frame, LEFT).shift(RIGHT * 0.04).set_y(frame.get_center()[1])
+        value_low = label("30 GB", 28, OK, "BOLD").move_to(value)
+        self.play(*dim, *[b.animate.set_fill(OK, 1).set_stroke(OK) for b in rows[3]], Transform(fill, low),
+                  FadeIn(value_low), run_time=0.8)
+
+
+        # 3. Partición nueva: hay que registrarla. 3. New partition: it must be registered.
+        new1 = DashedVMobject(self.part_box(self.COLS[3], self.ROW_Y[3], fill="#ffffff", stroke=AMBER), num_dashes=24)
+        new1_solid = self.part_box(self.COLS[3], self.ROW_Y[3], fill=OK, stroke=OK)
+        cap4 = label(ATHENA["c4"], 21, INK_SOFT, max_width=12.2).to_edge(DOWN, buff=0.75)
+        self.play(FadeOut(cap2), FadeIn(cap4), FadeIn(new1), run_time=0.6)
+        self.beat(0.5)
+        self.play(FadeOut(new1), FadeIn(new1_solid), run_time=0.6)
+
+        # 4. Con projection no hay que registrarla. 4. With projection nothing to register.
+        cap5 = label(ATHENA["c5"], 21, INK_SOFT, max_width=12.2).to_edge(DOWN, buff=0.75)
+        new2 = self.part_box(self.COLS[4], self.ROW_Y[3], fill=OK, stroke=OK)
+        tag = label(ATHENA["projection"], 15, OK, "BOLD").next_to(new2, DOWN, buff=0.08)
+        self.play(FadeOut(cap4), FadeIn(cap5), run_time=0.5)
+        self.play(FadeIn(new2, scale=0.8), FadeIn(tag), run_time=0.6)
         self.wait(1.2)

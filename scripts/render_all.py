@@ -10,14 +10,12 @@ Renders charts and videos in ES and EN and copies them to the website.
 Descubrimiento / discovery:
   Gráficos / charts: charts/topics/<topic>.py           (TEXT + CHARTS; curso en COURSE, por defecto el de AWS)
   Videos:            videos/<course>/<topic>/scenes.py  (VIDEOS = {"nombre": "Clase"})
-  Temas sin módulo propio usan los generadores genéricos heredados (charts/module_visuals.py y
-  videos/<course>/module-concepts/scenes.py) mientras existan.
-  Topics without their own module fall back to the legacy generic generators while they exist.
 
 Salidas / outputs:
   charts/images/<course>/<topic>/<name>.<lang>.png   (en el repo / committed)
   output/<course>/<topic>/<name>.<lang>.mp4           (local, .gitignore)
-  ../ml-academy-web/public/media/<course>/<topic>/<name>.<lang>.<ext>
+  ../ml-academy-web/public/media/<course>/<topic>/<name>.<lang>.png   (solo gráficos / charts only)
+  Videos: python scripts/manage_videos_yt.py publish  (YouTube, no listados / unlisted)
 """
 
 import argparse
@@ -38,9 +36,6 @@ VIDEO_ROOT = ROOT / "videos"
 LANGS = ["es", "en"]
 DEFAULT_COURSE = "aws-ml-engineer-associate"
 
-LEGACY_CHARTS = ROOT / "charts" / "module_visuals.py"
-LEGACY_SCENES = "module-concepts"
-
 
 def literal(path, name, default=None):
     """Lee una asignación literal sin importar el módulo. Reads a literal assignment without importing."""
@@ -58,28 +53,18 @@ def chart_jobs():
         if script.name.startswith("_"):
             continue
         jobs[(literal(script, "COURSE", DEFAULT_COURSE), script.stem)] = (script, [])
-    if LEGACY_CHARTS.exists():
-        for topic in literal(LEGACY_CHARTS, "TOPICS", {}):
-            jobs.setdefault((DEFAULT_COURSE, topic), (LEGACY_CHARTS, ["--topic", topic]))
     return jobs
 
 
 def video_jobs():
     """{(course, topic): (scene_file, {name: class}, env)}"""
     jobs = {}
-    legacy = []
     for course_dir in sorted(p for p in VIDEO_ROOT.iterdir() if p.is_dir() and not p.name.startswith(("_", "."))):
         for topic_dir in sorted(p for p in course_dir.iterdir() if p.is_dir()):
             scenes = topic_dir / "scenes.py"
             if not scenes.exists():
                 continue
-            if topic_dir.name == LEGACY_SCENES:
-                legacy.append((course_dir.name, scenes))
-                continue
             jobs[(course_dir.name, topic_dir.name)] = (scenes, literal(scenes, "VIDEOS", {}), {})
-    for course, scenes in legacy:
-        for topic in literal(scenes, "TOPICS", {}):
-            jobs.setdefault((course, topic), (scenes, literal(scenes, "VIDEOS", {}), {"MLA_TOPIC": topic}))
     return jobs
 
 
@@ -117,8 +102,10 @@ def render_videos(lang, topics):
 
 
 def sync(topics):
-    # Copia gráficos (charts/images) y videos (output) al web. Copies charts and videos to the web.
-    for src in (CHART_IMAGES, VIDEO_OUTPUT):
+    # Copia solo los gráficos (charts/images) al web. Los videos ya no se copian: se publican en YouTube
+    # con scripts/manage_videos_yt.py y el sitio los incrusta. Copies only the charts to the web. Videos are no
+    # longer copied: they are published to YouTube with manage_videos_yt.py and the site embeds them.
+    for src in (CHART_IMAGES,):
         if not src.exists():
             continue
         for course_dir in src.iterdir():
@@ -132,7 +119,7 @@ def sync(topics):
                 dest = WEB_MEDIA / course_dir.name / topic_dir.name
                 dest.mkdir(parents=True, exist_ok=True)
                 for f in topic_dir.iterdir():
-                    if f.is_file() and f.suffix in (".png", ".mp4"):
+                    if f.is_file() and f.suffix == ".png":
                         shutil.copy2(f, dest / f.name)
                         print(f"  -> {dest / f.name}")
 

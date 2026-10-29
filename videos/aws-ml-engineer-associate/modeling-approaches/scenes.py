@@ -11,12 +11,15 @@ import sys  # noqa: E402
 from pathlib import Path  # noqa: E402
 
 from manim import (  # noqa: E402
-    DOWN, LEFT, RIGHT, UP, Arrow, Create, FadeIn, FadeOut, Indicate, RoundedRectangle, Scene, SurroundingRectangle,
+    DOWN, LEFT, RIGHT, UP, Arrow, Create, FadeIn, FadeOut, Indicate, RoundedRectangle, SurroundingRectangle,
     VGroup,
 )
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from style import ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, SURFACE, label, node, pick  # noqa: E402
+from style import PacedScene  # noqa: E402
+from style import (  # noqa: E402
+    ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, SURFACE, icon_node, icon_title, label, node, pick, pulse,
+)
 
 TEXT = pick({
     "es": {
@@ -70,10 +73,11 @@ def chunk(region, text):
     return VGroup(box, tag, txt)
 
 
-class RagHybridFilter(Scene):
+class RagHybridFilter(PacedScene):
     def construct(self):
-        title = label(TEXT["title"], 24, INK, "BOLD", max_width=12.8).to_edge(UP, buff=0.35)
-        query = node(TEXT["query"], 5.6, 0.8, stroke=INK, fill="#ffffff", size=21).move_to(LEFT * 3.2 + UP * 2.35)
+        title = icon_title("aws/bedrock", TEXT["title"], 24, icon_height=0.5, max_width=12.8).to_edge(UP, buff=0.35)
+        query = icon_node("aws/user", TEXT["query"], None, 6.0, 0.85, stroke=INK, fill="#ffffff", title_size=19,
+                          icon_height=0.55).move_to(LEFT * 3.2 + UP * 2.35)
         flt = label(TEXT["filter"], 18, AMBER, "BOLD").next_to(query, RIGHT, buff=0.35)
         self.play(FadeIn(title), FadeIn(query), run_time=0.7)
 
@@ -102,14 +106,17 @@ class RagHybridFilter(Scene):
         hyb_tag = label(TEXT["hybrid"], 15, OK, "BOLD").next_to(hyb_box, UP, buff=0.05).align_to(hyb_box, RIGHT)
         self.play(FadeOut(step2), FadeIn(step3), FadeOut(sem_box), FadeOut(sem_tag), Create(hyb_box),
                   FadeIn(hyb_tag), run_time=0.6)
-        self.play(Indicate(cards[2], color=OK, scale_factor=1.05), run_time=0.5)
+        self.play(pulse(cards[2][0], OK), run_time=0.6)
 
         # Generación con cita. Generation with a citation.
-        fm = node(TEXT["fm"], 3.3, 0.9, stroke=INK_SOFT, size=18).move_to(RIGHT * 4.95 + UP * 0.1)
+        fm_t, _, fm_d = TEXT["fm"].partition(" · ")
+        fm = icon_node("aws/bedrock", f"Bedrock {fm_t}", fm_d, 3.3, 1.0, stroke=INK_SOFT, title_size=17,
+                       desc_size=14, icon_height=0.6).move_to(RIGHT * 5.0 + UP * 0.1)
         arr = Arrow(hyb_box.get_right(), fm.get_left(), buff=0.1, color=OK, stroke_width=3)
         self.play(FadeIn(fm), Create(arr), run_time=0.6)
-        ans = node(TEXT["answer"], 4.4, 0.8, stroke=OK, fill="#ffffff", size=17).move_to(RIGHT * 4.6 + DOWN * 1.45)
+        ans = node(TEXT["answer"], 4.4, 0.8, stroke=OK, fill=OK, size=17, color="#ffffff").move_to(
+            RIGHT * 4.6 + DOWN * 1.45)
         arr2 = Arrow(fm.get_bottom(), [fm.get_bottom()[0], ans.get_top()[1], 0], buff=0.1, color=OK, stroke_width=3)
         self.play(Create(arr2), FadeIn(ans), run_time=0.7)
-        self.play(Indicate(ans, color=OK, scale_factor=1.04), run_time=0.5)
+        self.play(pulse(ans, OK), run_time=0.6)
         self.wait(1.2)

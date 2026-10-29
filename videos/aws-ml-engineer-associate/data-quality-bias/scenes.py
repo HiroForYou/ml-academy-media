@@ -11,6 +11,8 @@ Formulas use MathTex (requires LaTeX, e.g. MiKTeX or TeX Live).
 VIDEOS = {"dq-pipeline": "DQPipeline", "stratified-split": "StratifiedSplit", "smote": "Smote"}
 
 import os  # noqa: E402
+import sys  # noqa: E402
+from pathlib import Path  # noqa: E402
 
 import numpy as np
 from manim import (
@@ -30,7 +32,6 @@ from manim import (
     MathTex,
     MoveAlongPath,
     RoundedRectangle,
-    Scene,
     Square,
     Text,
     VGroup,
@@ -39,6 +40,10 @@ from manim import (
 )
 
 config.background_color = WHITE
+
+# Nodos con logo compartidos. Shared logo nodes.
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+from style import PacedScene, icon_node, icon_title, pulse  # noqa: E402
 
 INK = "#111114"
 INK_SOFT = "#3d3d45"
@@ -129,23 +134,29 @@ def pct(value):
     return (s.replace(".", ",") + " %") if LANG == "es" else s + "%"
 
 
-class DQPipeline(Scene):
+class DQPipeline(PacedScene):
     def construct(self):
-        s3 = node(TEXT["s3"], 2.8).move_to(LEFT * 5 + UP * 0.6)
-        etl = node(TEXT["etl"], 2.8).move_to(LEFT * 1.4 + UP * 0.6)
-        dq = node(TEXT["dq"], 3.3, 2.3).move_to(RIGHT * 2.6 + UP * 0.6)
-        dq[1].next_to(dq[0].get_top(), DOWN, buff=0.18)
+        s3 = icon_node("aws/s3", TEXT["s3"], None, 2.9, 1.0, stroke=INK_SOFT, title_size=18,
+                       icon_height=0.55).move_to(LEFT * 5.05 + UP * 0.6)
+        etl = icon_node("aws/glue", TEXT["etl"], None, 2.9, 1.0, stroke=INK_SOFT, title_size=18,
+                        icon_height=0.55).move_to(LEFT * 1.4 + UP * 0.6)
+        dq_box = RoundedRectangle(width=3.4, height=2.3, corner_radius=0.12, stroke_color=INK_SOFT, stroke_width=2)
+        dq_box.set_fill(SURFACE, opacity=1)
+        dq_t = icon_title("aws/glue-data-quality", TEXT["dq"], 18, icon_height=0.42, max_width=3.15)
+        dq = VGroup(dq_box, dq_t.next_to(dq_box.get_top(), DOWN, buff=0.16)).move_to(RIGHT * 2.65 + UP * 0.6)
 
         rules = ['IsComplete "id"', 'IsUnique "id"', 'ColumnValues "age"']
         rule_rows = VGroup()
         for i, r in enumerate(rules):
-            rule = label(r, 17, INK_SOFT).move_to(dq[0].get_center() + UP * 0.2 + DOWN * 0.42 * i)
+            rule = label(r, 17, INK_SOFT).move_to(dq[0].get_center() + UP * 0.12 + DOWN * 0.42 * i)
             rule.align_to(dq[0], LEFT).shift(RIGHT * 0.25)
             rule_rows.add(VGroup(rule))
 
-        train = node(TEXT["train"], 3.0, 0.8, stroke=OK).move_to(RIGHT * 5.4 + UP * 2.9)
-        stop = node(TEXT["stop"], 3.0, 0.8, stroke=ACCENT).move_to(RIGHT * 5.4 + DOWN * 1.9)
-        alarm = label(TEXT["alarm"], 18, ACCENT).next_to(stop, DOWN, buff=0.15)
+        train = icon_node("aws/s3", TEXT["train"], None, 3.0, 0.85, stroke=OK, title_size=17,
+                          icon_height=0.5).move_to(RIGHT * 5.4 + UP * 2.85)
+        stop = icon_node("aws/glue", TEXT["stop"], None, 3.0, 0.85, stroke=ACCENT, title_size=17,
+                         icon_height=0.5).move_to(RIGHT * 5.4 + DOWN * 1.85)
+        alarm = icon_title("aws/cloudwatch", TEXT["alarm"], 17, ACCENT, icon_height=0.36).next_to(stop, DOWN, buff=0.15)
 
         arrows = VGroup(
             Arrow(s3.get_right(), etl.get_left(), buff=0.1, color=MUTED, stroke_width=3),
@@ -164,7 +175,8 @@ class DQPipeline(Scene):
         caption2 = label(TEXT["batch_bad"], 24, ACCENT).to_edge(DOWN, buff=0.45)
         self.play(FadeOut(caption), FadeIn(caption2), run_time=0.3)
         self._run_batch(s3, etl, dq, rule_rows, [True, False, True], down_arrow, stop, ACCENT)
-        self.play(FadeIn(alarm), Flash(stop, color=ACCENT, line_length=0.3, flash_radius=1.7), run_time=0.8)
+        self.play(FadeIn(alarm), stop.box.animate.set_fill("#fbeef0", 1).set_stroke(ACCENT, 4),
+                  Flash(stop, color=ACCENT, line_length=0.3, flash_radius=1.7), run_time=0.8)
         self.wait(1.2)
 
     def _run_batch(self, s3, etl, dq, rule_rows, results, out_arrow, target, color):
@@ -181,12 +193,12 @@ class DQPipeline(Scene):
             self.play(FadeIn(mark), run_time=0.22)
         self.play(Create(out_arrow), run_time=0.35)
         self.play(MoveAlongPath(dot, Line(dq.get_center(), out_arrow.get_end())), run_time=0.55)
-        self.play(FadeOut(dot), Indicate(target, color=color, scale_factor=1.06), run_time=0.5)
+        self.play(FadeOut(dot), pulse(target, color), run_time=0.6)
         if all(results):
             self.play(FadeOut(marks), FadeOut(out_arrow), run_time=0.3)
 
 
-class StratifiedSplit(Scene):
+class StratifiedSplit(PacedScene):
     N = 58
     POS = 5  # 5/58 ≈ 8.6 %
 
@@ -257,7 +269,7 @@ class StratifiedSplit(Scene):
         self.wait(1.4)
 
 
-class Smote(Scene):
+class Smote(PacedScene):
     def construct(self):
         rng = np.random.default_rng(11)
         title = label(TEXT["smote_title"], 26).to_edge(UP, buff=0.5)

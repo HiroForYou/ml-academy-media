@@ -1,0 +1,94 @@
+{
+  "prompt-caching": {
+    "es": "Prompt caching en Bedrock: menos costo por token",
+    "en": "Prompt caching in Bedrock: lower cost per token"
+  },
+  "target-tracking": {
+    "es": "Target tracking: escalar según InvocationsPerInstance",
+    "en": "Target tracking: scaling on InvocationsPerInstance"
+  },
+  "feature-store-event-time": {
+    "es": "SageMaker Feature Store: event time",
+    "en": "SageMaker Feature Store: event time"
+  },
+  "stream-to-s3": {
+    "es": "Del stream a S3 con Kinesis y Firehose",
+    "en": "From stream to S3 with Kinesis and Firehose"
+  },
+  "dq-pipeline": {
+    "es": "Calidad de datos con AWS Glue Data Quality",
+    "en": "Data quality with AWS Glue Data Quality"
+  },
+  "smote": {
+    "es": "SMOTE: balancear clases con ejemplos sintéticos",
+    "en": "SMOTE: balancing classes with synthetic samples"
+  },
+  "stratified-split": {
+    "es": "División estratificada de los datos",
+    "en": "Stratified data split"
+  },
+  "fit-on-train": {
+    "es": "Escalar sin fuga de datos: ajustar solo con entrenamiento",
+    "en": "Scaling without data leakage: fit on training data only"
+  },
+  "async-inference": {
+    "es": "Inferencia asíncrona en SageMaker AI",
+    "en": "Asynchronous inference in SageMaker AI"
+  },
+  "mme-loading": {
+    "es": "Multi-model endpoint: carga de modelos bajo demanda",
+    "en": "Multi-model endpoint: loading models on demand"
+  },
+  "canary-rollback": {
+    "es": "Despliegue canary y rollback automático",
+    "en": "Canary deployment and automatic rollback"
+  },
+  "pipeline-gate": {
+    "es": "Puerta de calidad en un pipeline de MLOps",
+    "en": "Quality gate in an MLOps pipeline"
+  },
+  "shadow-test": {
+    "es": "Shadow test: probar un candidato con tráfico real",
+    "en": "Shadow test: trying a candidate with live traffic"
+  },
+  "rag-hybrid-filter": {
+    "es": "RAG: búsqueda híbrida y filtros de metadatos",
+    "en": "RAG: hybrid search and metadata filters"
+  },
+  "ab-traffic-shift": {
+    "es": "A/B testing: mover el tráfico entre variantes",
+    "en": "A/B testing: shifting traffic between variants"
+  },
+  "label-delay": {
+    "es": "Monitoreo cuando las etiquetas llegan con retraso",
+    "en": "Monitoring when labels arrive late"
+  },
+  "private-endpoint": {
+    "es": "Endpoint de SageMaker AI dentro de una VPC",
+    "en": "SageMaker AI endpoint inside a VPC"
+  },
+  "guardrails-pii": {
+    "es": "Guardrails: enmascarar PII en prompts y respuestas",
+    "en": "Guardrails: masking PII in prompts and responses"
+  },
+  "kms-access-denied": {
+    "es": "AccessDenied con KMS: política de la clave frente a IAM",
+    "en": "KMS AccessDenied: key policy versus IAM"
+  },
+  "hyperband": {
+    "es": "Hyperband en AMT: más epochs para las configuraciones prometedoras",
+    "en": "Hyperband in AMT: more epochs for promising configurations"
+  },
+  "athena-partitions": {
+    "es": "Athena: particiones y partition pruning",
+    "en": "Athena: partitions and partition pruning"
+  },
+  "regularization": {
+    "es": "Regularización: cerrar la brecha entre entrenamiento y validación",
+    "en": "Regularization: closing the training-validation gap"
+  },
+  "genai-pipeline": {
+    "es": "CI/CD para IA generativa: pruebas de prompts y refresco del RAG",
+    "en": "CI/CD for generative AI: prompt tests and RAG refresh"
+  }
+}

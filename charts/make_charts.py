@@ -8,11 +8,10 @@ Cada gráfico es una función independiente; los textos viven en TEXT[lang].
 Each chart is an independent function; on-screen text lives in TEXT[lang].
 """
 
-import os
-
 import numpy as np
+from matplotlib.patches import Rectangle
 
-from style import ACCENT, DPI, GRAY, INK, INK_SOFT, MUTED, OK, RULE, WIDTH_IN, clean_axes, cli, fmt, plt
+from style import ACCENT, DPI, GRAY, INK, INK_SOFT, MUTED, OK, RULE, WIDTH_IN, clean_axes, cli, fmt, plt, save
 
 TEXT = {
     "es": {
@@ -20,6 +19,10 @@ TEXT = {
         "default": "Impago",
         "share": "% de solicitudes",
         "trap": "Predecir siempre «sin impago»:\naccuracy ≈ 91 %, recall = 0",
+        "dots_title": "1 punto = 1 de cada 100 solicitudes",
+        "cm_rows": ["Real:\nsin impago", "Real:\nimpago"],
+        "cm_cols": ["Predice\nsin impago", "Predice\nimpago"],
+        "round_note": "Redondeado: 91,4 % ≈ 91 y 8,6 % ≈ 9 de cada 100",
         "facet_a": "Faceta a\n(edad ≤ 60)",
         "facet_d": "Faceta d\n(edad > 60)",
         "rows": "Filas",
@@ -47,6 +50,10 @@ TEXT = {
         "default": "Default",
         "share": "% of applications",
         "trap": "Always predicting “no default”:\naccuracy ≈ 91%, recall = 0",
+        "dots_title": "1 dot = 1 in 100 applications",
+        "cm_rows": ["Actual:\nno default", "Actual:\ndefault"],
+        "cm_cols": ["Predicts\nno default", "Predicts\ndefault"],
+        "round_note": "Rounded: 91.4% ≈ 91 and 8.6% ≈ 9 in 100",
         "facet_a": "Facet a\n(age ≤ 60)",
         "facet_d": "Facet d\n(age > 60)",
         "rows": "Rows",
@@ -77,21 +84,60 @@ def chart_class_imbalance(t, out):
     shares = [91.4, 8.6]
     labels = [t["no_default"], t["default"]]
 
-    fig, ax = plt.subplots(figsize=(WIDTH_IN, 4.2), dpi=DPI)
+    fig = plt.figure(figsize=(WIDTH_IN, 5.0), dpi=DPI)
+    gs = fig.add_gridspec(2, 2, width_ratios=[1.0, 1.05], height_ratios=[1, 1.15], hspace=0.28, wspace=0.12,
+                          left=0.14, right=0.985, top=0.96, bottom=0.18)
+
+    # Barras: lo que ya se veía / the bars as before
+    ax = fig.add_subplot(gs[:, 0])
     bars = ax.barh(labels, shares, color=[GRAY, ACCENT], height=0.5, zorder=3)
     for b, v in zip(bars, shares):
-        ax.text(v + 1.2, b.get_y() + b.get_height() / 2, fmt(v, t, suffix=" %" if t["decimal"] == "," else "%"),
+        ax.text(v + 1.5, b.get_y() + b.get_height() / 2, fmt(v, t, suffix=" %" if t["decimal"] == "," else "%"),
                 va="center", fontsize=12, fontweight="bold", color=INK)
-    ax.text(26, 1, t["trap"], fontsize=10, color=INK_SOFT, va="center")
-    ax.set_xlim(0, 105)
+    ax.set_xlim(0, 128)
+    ax.set_xticks([0, 25, 50, 75, 100])
     ax.set_xlabel(t["share"])
     ax.invert_yaxis()
     clean_axes(ax)
     ax.spines["left"].set_visible(False)
     ax.tick_params(left=False, labelsize=11)
-    fig.tight_layout()
-    fig.savefig(os.path.join(out, "class-imbalance.png"))
-    plt.close(fig)
+
+    # Cuadrícula de 100 solicitudes, 9 con impago / grid of 100 applications, 9 defaults
+    axd = fig.add_subplot(gs[0, 1])
+    rng = np.random.default_rng(7)
+    bad = set(rng.choice(100, 9, replace=False).tolist())
+    xs, ys = np.meshgrid(np.arange(10), np.arange(9, -1, -1))
+    cols = [ACCENT if i in bad else GRAY for i in range(100)]
+    axd.scatter(xs.ravel(), ys.ravel(), s=46, c=cols, linewidths=0, zorder=3)
+    axd.set_xlim(-0.8, 9.8)
+    axd.set_ylim(-0.7, 10.9)
+    axd.axis("off")
+    axd.text(4.5, 10.6, t["dots_title"], ha="center", va="center", fontsize=9.5, color=INK_SOFT, fontweight="bold")
+
+    # Matriz de confusión de «siempre sin impago» / confusion matrix of "always no default"
+    axc = fig.add_subplot(gs[1, 1])
+    axc.set_xlim(0, 4.6)
+    axc.set_ylim(0, 4.0)
+    axc.axis("off")
+    cw, ch, x0, y0 = 1.35, 0.8, 1.6, 1.15
+    cells = [[("91", GRAY, INK), ("0", "white", MUTED)], [("9", ACCENT, "white"), ("0", "white", MUTED)]]
+    for r in range(2):
+        for c in range(2):
+            label, fill, fg = cells[r][c]
+            axc.add_patch(Rectangle((x0 + c * (cw + 0.08), y0 + (1 - r) * (ch + 0.08)), cw, ch, facecolor=fill,
+                                    edgecolor=ACCENT if (r == 1 and c == 1) else GRAY, linewidth=1.4, zorder=2))
+            axc.text(x0 + c * (cw + 0.08) + cw / 2, y0 + (1 - r) * (ch + 0.08) + ch / 2, label, ha="center",
+                     va="center", fontsize=13, fontweight="bold", color=fg, zorder=3)
+        axc.text(x0 - 0.12, y0 + (1 - r) * (ch + 0.08) + ch / 2, t["cm_rows"][r], ha="right", va="center",
+                 fontsize=8.5, color=INK_SOFT, multialignment="right")
+    for c in range(2):
+        axc.text(x0 + c * (cw + 0.08) + cw / 2, y0 + 2 * ch + 0.08 + 0.14, t["cm_cols"][c], ha="center", va="bottom",
+                 fontsize=8.5, color=INK_SOFT, multialignment="center")
+    axc.text(x0 + cw + 0.04, 0.55, t["trap"], ha="center", va="center", fontsize=9.5, fontweight="bold",
+             color=ACCENT, multialignment="center")
+
+    fig.text(0.14, 0.035, t["round_note"], fontsize=8.5, color=MUTED, va="center")
+    save(fig, out, "class-imbalance")
 
 
 # ─── 2. Sesgo pre-training: CI y DPL / pre-training bias ───────────────────────
@@ -125,8 +171,7 @@ def chart_bias_ci_dpl(t, out):
     clean_axes(ax2)
 
     fig.tight_layout(w_pad=3)
-    fig.savefig(os.path.join(out, "bias-ci-dpl.png"))
-    plt.close(fig)
+    save(fig, out, "bias-ci-dpl")
 
 
 # ─── 3. Outliers y recorte IQR / outliers and IQR clipping ─────────────────────
@@ -167,8 +212,7 @@ def chart_outliers_iqr(t, out):
     clean_axes(ax2)
 
     fig.tight_layout(h_pad=2)
-    fig.savefig(os.path.join(out, "outliers-iqr.png"))
-    plt.close(fig)
+    save(fig, out, "outliers-iqr")
 
 
 # ─── 4. Métricas por estrategia (resultados del laboratorio) / metrics per strategy ──
@@ -200,8 +244,7 @@ def chart_imbalance_metrics(t, out):
     ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=4, fontsize=8.6,
               handlelength=1.1)
     fig.tight_layout()
-    fig.savefig(os.path.join(out, "imbalance-metrics.png"))
-    plt.close(fig)
+    save(fig, out, "imbalance-metrics")
 
 
 CHARTS = [chart_class_imbalance, chart_bias_ci_dpl, chart_outliers_iqr, chart_imbalance_metrics]

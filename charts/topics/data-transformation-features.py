@@ -17,7 +17,7 @@ from matplotlib.patches import Rectangle  # noqa: E402
 
 from style import (  # noqa: E402
     ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, RULE, SURFACE,
-    clean_axes, cli, figure, fmt, pct, save,
+    box, clean_axes, cli, diagram_axes, figure, fit_to, fmt, pct, save,
 )
 
 TEXT = {
@@ -49,6 +49,30 @@ TEXT = {
         "child_hit": "el hijo coincide → se devuelve el padre",
         "cut_ignores": "corta sin mirar el tema",
         "cut_meaning": "corta donde cambia el significado (usa un FM)",
+        "ex_title": "Ejemplo: dividir por tiempo y calcular cada feature solo con el pasado",
+        "ex_split": "Ordered split por fecha",
+        "ex_months": ["ene", "feb", "mar", "abr", "may"],
+        "ex_train": "Entrenamiento (hasta marzo)",
+        "ex_val": "Validación (abril)",
+        "ex_test": "Prueba (mayo)",
+        "ex_fit": "el Standard Scaler y el one-hot se ajustan solo aquí",
+        "ex_one": "Un ejemplo alrededor de su fecha de corte",
+        "ex_days": "Días respecto a la fecha de corte",
+        "ex_feat": "sessions_30d: los 30 días hasta el corte",
+        "ex_label": "churn_30d: etiqueta de los 30 días siguientes",
+        "ex_cut": "corte",
+        "ex_leak": "una sesión posterior al corte nunca entra en las features",
+        "ex_note": "Caso del ejemplo · fechas ilustrativas",
+        "ep_title": "Codifica según el orden y la cardinalidad; PCA resume en pocos componentes",
+        "ep_src": "size",
+        "ep_blocks": [("One-hot", "sin orden"), ("Ordinal", "con orden"), ("Target", "media del\nobjetivo")],
+        "ep_foot": "Muchos valores o texto con errores: similarity encode",
+        "ep_pca": "PCA: varianza acumulada",
+        "ep_x": "Componentes principales",
+        "ep_y": "Varianza acumulada",
+        "ep_thr": "umbral 95 %",
+        "ep_k": "{k} de {n} componentes",
+        "ep_note": "Ilustrativo: datos sintéticos; en el target encoding, la media se calcula solo con entrenamiento",
     },
     "en": {
         "decimal": ".",
@@ -78,6 +102,30 @@ TEXT = {
         "child_hit": "child matches → parent is returned",
         "cut_ignores": "cuts regardless of topic",
         "cut_meaning": "cuts where meaning changes (uses an FM)",
+        "ex_title": "Example: split by time and compute every feature from the past only",
+        "ex_split": "Ordered split by date",
+        "ex_months": ["Jan", "Feb", "Mar", "Apr", "May"],
+        "ex_train": "Training (through March)",
+        "ex_val": "Validation (April)",
+        "ex_test": "Test (May)",
+        "ex_fit": "the Standard Scaler and one-hot are fitted here only",
+        "ex_one": "One example around its cutoff date",
+        "ex_days": "Days relative to the cutoff date",
+        "ex_feat": "sessions_30d: the 30 days up to the cutoff",
+        "ex_label": "churn_30d: label over the next 30 days",
+        "ex_cut": "cutoff",
+        "ex_leak": "a session after the cutoff never enters the features",
+        "ex_note": "Worked example · illustrative dates",
+        "ep_title": "Encode by order and cardinality; PCA summarizes in a few components",
+        "ep_src": "size",
+        "ep_blocks": [("One-hot", "no order"), ("Ordinal", "with order"), ("Target", "mean of the\ntarget")],
+        "ep_foot": "Many values or typo-prone text: similarity encode",
+        "ep_pca": "PCA: cumulative variance",
+        "ep_x": "Principal components",
+        "ep_y": "Cumulative variance",
+        "ep_thr": "95% threshold",
+        "ep_k": "{k} of {n} components",
+        "ep_note": "Illustrative: synthetic data; in target encoding, the mean is computed on training data only",
     },
 }
 
@@ -217,7 +265,127 @@ def chart_chunking(t, out):
     save(fig, out, "chunking-strategies")
 
 
-CHARTS = [chart_log_then_scale, chart_scalers_outliers, chart_chunking]
+# ─── 4. Línea de tiempo del ejemplo / the worked example's timeline ────────────
+def chart_example_timeline(t, out):
+    fig, (a1, a2) = figure(4.4, nrows=2, gridspec_kw={"height_ratios": [1, 1.25]})
+    # Meses de ene a may (días desde el 1 de enero). Months Jan to May (days since Jan 1).
+    edges = [0, 31, 59, 90, 120, 151]
+    bands = [(0, 90, t["ex_train"], OK), (90, 120, t["ex_val"], AMBER), (120, 151, t["ex_test"], GRAY)]
+    for x0, x1, label, color in bands:
+        a1.barh(0, x1 - x0, left=x0, height=0.5, color=color, edgecolor="white", lw=2)
+        a1.text((x0 + x1) / 2, 0, label, ha="center", va="center", fontsize=8.8,
+                color="white" if color == OK else INK, fontweight="bold")
+    fit_to(a1.text(45, -0.55, t["ex_fit"], ha="center", va="top", fontsize=8.6, color=OK), 88)
+    a1.set_xlim(0, 151)
+    a1.set_ylim(-1.15, 0.5)
+    a1.set_yticks([])
+    a1.set_xticks([(a + b) / 2 for a, b in zip(edges, edges[1:])])
+    a1.set_xticklabels(t["ex_months"])
+    a1.tick_params(axis="x", length=0)
+    a1.set_title(t["ex_split"], fontsize=9.8, loc="left", color=INK, fontweight="bold")
+    clean_axes(a1)
+    a1.spines["left"].set_visible(False)
+
+    a2.barh(1, 30, left=-30, height=0.42, color=OK)
+    a2.text(-15, 1.38, t["ex_feat"], ha="center", va="bottom", fontsize=8.6, color=OK)
+    a2.barh(0, 30, left=0, height=0.42, color=INK_SOFT)
+    a2.text(15, -0.38, t["ex_label"], ha="center", va="top", fontsize=8.6, color=INK_SOFT)
+    a2.axvline(0, color=ACCENT, lw=1.4, ls=(0, (3, 2)))
+    a2.text(0.8, 2.0, t["ex_cut"], color=ACCENT, fontsize=8.8, va="center", fontweight="bold")
+    a2.scatter([9], [1], marker="x", s=60, color=ACCENT, zorder=4, lw=2)
+    a2.annotate(t["ex_leak"], xy=(9.5, 1), xytext=(13, 1), fontsize=8.4, color=ACCENT, va="center",
+                arrowprops=dict(arrowstyle="-", color=ACCENT, lw=0.8))
+    a2.set_xlim(-34, 34)
+    a2.set_ylim(-1.0, 2.35)
+    a2.set_yticks([])
+    a2.set_xticks(range(-30, 31, 10))
+    a2.set_xlabel(t["ex_days"], fontsize=9)
+    a2.set_title(t["ex_one"], fontsize=9.8, loc="left", color=INK, fontweight="bold")
+    clean_axes(a2)
+    a2.spines["left"].set_visible(False)
+
+    fig.suptitle(t["ex_title"], x=0.01, ha="left", fontsize=10.6, fontweight="bold", color=INK)
+    fig.text(0.99, 0.01, t["ex_note"], ha="right", fontsize=8, color=MUTED)
+    fig.tight_layout(rect=(0, 0.03, 1, 1), h_pad=1.4)
+    save(fig, out, "example-timeline")
+
+
+# ─── 5. Codificación y PCA / encoding and PCA ──────────────────────────────────
+def chart_encoding_pca(t, out):
+    fig, axes = figure(4.1, ncols=2, gridspec_kw={"width_ratios": [1.3, 1]})
+    ax, pc = axes
+    diagram_axes(ax, 9.7, 8)
+    cw, ch = 1.35, 0.9
+    src, onehot_x, ord_x, tgt_x = 0.1, 1.95, 6.4, 8.15
+    rows = ["S", "M", "L", "M"]
+    cats = ["S", "M", "L"]
+    ys = [5.0 - i * 1.0 for i in range(4)]  # centros de fila / row centres
+
+    def cell(x, y, text, fill=SURFACE, color=INK, weight="normal", edge=RULE):
+        box(ax, x, y - ch / 2, cw - 0.1, ch, "", edge=edge, fill=fill)
+        ax.text(x + (cw - 0.1) / 2, y, text, ha="center", va="center", fontsize=9, color=color, fontweight=weight,
+                zorder=3)
+
+    ax.text(src + (cw - 0.1) / 2, 6.1, t["ep_src"], ha="center", va="center", fontsize=8.6, color=MUTED)
+    for y, v in zip(ys, rows):
+        cell(src, y, v, fill="white", edge=INK_SOFT, weight="bold")
+
+    # One-hot: una columna por valor / one column per value
+    ax.text(onehot_x + 1.5 * cw - 0.05, 7.55, t["ep_blocks"][0][0], ha="center", va="center", fontsize=9.8,
+            fontweight="bold", color=INK)
+    ax.text(onehot_x + 1.5 * cw - 0.05, 7.0, t["ep_blocks"][0][1], ha="center", va="top", fontsize=8.2,
+            color=MUTED)
+    for j, c in enumerate(cats):
+        ax.text(onehot_x + j * cw + (cw - 0.1) / 2, 6.1, c, ha="center", va="center", fontsize=8.6, color=MUTED)
+        for y, v in zip(ys, rows):
+            on = v == c
+            cell(onehot_x + j * cw, y, "1" if on else "0", fill="#f7e1e5" if on else SURFACE,
+                 color=ACCENT if on else MUTED, weight="bold" if on else "normal",
+                 edge=ACCENT if on else RULE)
+
+    # Ordinal y target / ordinal and target
+    order = {"S": 0, "M": 1, "L": 2}
+    mean = {"S": 0.40, "M": 0.25, "L": 0.10}
+    for (title, cue), bx, fn in ((t["ep_blocks"][1], ord_x, lambda v: str(order[v])),
+                                 (t["ep_blocks"][2], tgt_x, lambda v: fmt(mean[v], t, 2))):
+        ax.text(bx + (cw - 0.1) / 2, 7.55, title, ha="center", va="center", fontsize=9.8, fontweight="bold",
+                color=INK)
+        ax.text(bx + (cw - 0.1) / 2, 7.0, cue, ha="center", va="top", fontsize=8.2, color=MUTED,
+                multialignment="center")
+        for y, v in zip(ys, rows):
+            cell(bx, y, fn(v))
+    foot = ax.text(0.1, 0.55, t["ep_foot"], ha="left", va="center", fontsize=8.4, color=INK_SOFT)
+    fit_to(foot, 9.4)
+
+    # PCA: varianza acumulada con umbral del 95 % / cumulative variance with the 95 % threshold
+    n = 40
+    var = 0.78 ** np.arange(n)
+    cum = np.cumsum(var / var.sum())
+    kstar = int(np.argmax(cum >= 0.95)) + 1
+    comps = np.arange(1, n + 1)
+    pc.plot(comps, cum, color=INK_SOFT, lw=1.8, zorder=2)
+    pc.axhline(0.95, color=ACCENT, lw=1.1, ls=(0, (4, 3)), zorder=1)
+    pc.plot([kstar, kstar], [0, cum[kstar - 1]], color=ACCENT, lw=1.1, ls=":", zorder=1)
+    pc.scatter([kstar], [cum[kstar - 1]], s=46, color=ACCENT, zorder=4)
+    pc.text(1.5, 0.965, t["ep_thr"], fontsize=8.4, color=ACCENT, va="bottom", ha="left")
+    pc.text(kstar + 1.6, 0.62, t["ep_k"].format(k=kstar, n=n), fontsize=8.8, color=ACCENT, fontweight="bold",
+            va="center", ha="left")
+    pc.set_xlim(1, n)
+    pc.set_ylim(0, 1.08)
+    pc.set_xlabel(t["ep_x"], fontsize=9)
+    pc.set_ylabel(t["ep_y"], fontsize=9)
+    pc.yaxis.set_major_formatter(lambda v, _: pct(v * 100, t, 0))
+    pc.set_title(t["ep_pca"], fontsize=10, loc="left", color=INK, fontweight="bold")
+    pc.grid(True, color=RULE, lw=0.6, zorder=0)
+    clean_axes(pc)
+
+    fig.suptitle(t["ep_title"], x=0.01, ha="left", fontsize=10.6, fontweight="bold", color=INK)
+    fig.text(0.99, 0.01, t["ep_note"], ha="right", fontsize=8, color=MUTED)
+    fig.tight_layout(rect=(0, 0.04, 1, 0.94), w_pad=1.6)
+    save(fig, out, "encoding-pca")
+
+
+CHARTS = [chart_log_then_scale, chart_scalers_outliers, chart_chunking, chart_example_timeline, chart_encoding_pca]
 
 if __name__ == "__main__":
     cli(TEXT, CHARTS)

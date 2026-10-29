@@ -3,3 +3,11 @@ output/
 media/
 __pycache__/
 *.pyc
+
+# Credenciales de YouTube (no subir) / YouTube credentials (never commit)
+client_secret*.json
+client_secrets.json
+token.pickle
+.ruff_cache/
+token.json
+client_secret.json

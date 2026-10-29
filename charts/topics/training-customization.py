@@ -13,8 +13,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from style import (  # noqa: E402
-    ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, RULE,
-    clean_axes, cli, figure, fmt, save,
+    ACCENT, AMBER, GRAY, INK, INK_SOFT, MUTED, OK, RULE, SURFACE,
+    DPI, WIDTH_IN, box, clean_axes, cli, diagram_axes, figure, fit_to, fmt, plt, save,
 )
 
 TEXT = {
@@ -43,6 +43,37 @@ TEXT = {
         "spot_title": "Una interrupción sin checkpoints reinicia el trabajo desde cero",
         "spot_note": "Ilustrativo",
         "max_wait": "MaxWaitTimeInSeconds",
+        "plan_title": "El ejemplo: cerrar la brecha de overfitting sin tocar el conjunto de prueba",
+        "auc": "AUC",
+        "start": "Inicio\nmax_depth = 10",
+        "after": "Mejor trabajo\nde AMT",
+        "gap": "brecha 0,19\n→ overfitting",
+        "uses": "Qué decide cada conjunto",
+        "split_train": "Entrenamiento",
+        "split_train_use": "Ajusta los árboles con fit()",
+        "split_val": "Validación",
+        "split_val_use": "Early stopping (paso 2), métrica objetivo validation:auc de AMT y elección "
+                         "del mejor trabajo (pasos 3 y 5)",
+        "split_test": "Prueba",
+        "split_test_use": "Una sola medición final frente a la baseline (paso 5)",
+        "plan_note": "Cifras del caso de ejemplo · eje vertical desde 0,6",
+        "reg_title": "La regularización estrecha la brecha entre entrenamiento y validación",
+        "reg_without": "Sin regularización",
+        "reg_with": "Con regularización",
+        "reg_epoch": "Época",
+        "reg_loss": "Error",
+        "reg_gap_big": "brecha grande:\noverfitting",
+        "reg_gap_small": "brecha pequeña:\ngeneraliza",
+        "reg_stop": "early stopping\ncortaría aquí",
+        "reg_l1": "L1",
+        "reg_l1_use": "lleva pesos a cero",
+        "reg_l2": "L2",
+        "reg_l2_use": "reduce todos los pesos",
+        "reg_drop": "Dropout",
+        "reg_drop_use": "apaga neuronas al azar",
+        "reg_es": "Early stopping",
+        "reg_es_use": "corta cuando la validación no mejora",
+        "reg_note": "Ilustrativo: curvas sintéticas",
     },
     "en": {
         "decimal": ".",
@@ -69,6 +100,37 @@ TEXT = {
         "spot_title": "Without checkpoints, an interruption restarts the job from zero",
         "spot_note": "Illustrative",
         "max_wait": "MaxWaitTimeInSeconds",
+        "plan_title": "The example: closing the overfitting gap without touching the test set",
+        "auc": "AUC",
+        "start": "Start\nmax_depth = 10",
+        "after": "Best AMT\njob",
+        "gap": "0.19 gap\n→ overfitting",
+        "uses": "What each split decides",
+        "split_train": "Training",
+        "split_train_use": "Fits the trees with fit()",
+        "split_val": "Validation",
+        "split_val_use": "Early stopping (step 2), the AMT objective validation:auc and picking the best job "
+                         "(steps 3 and 5)",
+        "split_test": "Test",
+        "split_test_use": "A single final measurement against the baseline (step 5)",
+        "plan_note": "Figures from the worked example · vertical axis starts at 0.6",
+        "reg_title": "Regularization narrows the gap between training and validation",
+        "reg_without": "Without regularization",
+        "reg_with": "With regularization",
+        "reg_epoch": "Epoch",
+        "reg_loss": "Error",
+        "reg_gap_big": "large gap:\noverfitting",
+        "reg_gap_small": "small gap:\ngeneralizes",
+        "reg_stop": "early stopping\nwould stop here",
+        "reg_l1": "L1",
+        "reg_l1_use": "drives weights to zero",
+        "reg_l2": "L2",
+        "reg_l2_use": "shrinks all weights",
+        "reg_drop": "Dropout",
+        "reg_drop_use": "randomly turns off neurons",
+        "reg_es": "Early stopping",
+        "reg_es_use": "stops when validation stops improving",
+        "reg_note": "Illustrative: synthetic curves",
     },
 }
 
@@ -228,7 +290,120 @@ def chart_spot_checkpoints(t, out):
     save(fig, out, "spot-checkpoints")
 
 
-CHARTS = [chart_early_stopping, chart_hpo_strategies, chart_spot_checkpoints]
+# ─── 4. Plan del ejemplo / the worked example's plan ───────────────────────────
+def chart_tuning_plan(t, out):
+    fig = plt.figure(figsize=(WIDTH_IN, 4.1), dpi=DPI)
+    gs = fig.add_gridspec(1, 2, width_ratios=[1, 1.25], wspace=0.12)
+    ax, ax2 = fig.add_subplot(gs[0]), fig.add_subplot(gs[1])
+
+    # AUC del caso / AUC from the case
+    x = np.array([0, 1])
+    ax.bar(x[0] - 0.19, 0.97, 0.36, color=GRAY, label=t["train"], zorder=3)
+    ax.bar(x + 0.19, [0.78, 0.86], 0.36, color=[ACCENT, OK], label=t["val"], zorder=3)
+    for xi, v in ((x[0] - 0.19, 0.97), (x[0] + 0.19, 0.78), (x[1] + 0.19, 0.86)):
+        ax.text(xi, v + 0.008, fmt(v, t, 2), ha="center", va="bottom", fontsize=9.5, fontweight="bold", color=INK)
+    ax.annotate("", xy=(x[0] + 0.45, 0.97), xytext=(x[0] + 0.45, 0.78),
+                arrowprops=dict(arrowstyle="<|-|>", color=ACCENT, lw=1.2))
+    ax.text(x[0] + 0.52, 0.875, t["gap"], fontsize=8.6, color=ACCENT, va="center")
+    ax.set_xticks(x)
+    ax.set_xticklabels([t["start"], t["after"]], fontsize=9)
+    ax.set_ylim(0.6, 1.04)
+    ax.set_yticks([0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_xlim(-0.6, 1.6)
+    ax.yaxis.set_major_formatter(lambda v, _: fmt(v, t, 1))
+    ax.set_ylabel(t["auc"])
+    ax.legend(frameon=False, fontsize=8.6, loc="upper right", ncol=2, bbox_to_anchor=(1.0, 1.1))
+    ax.yaxis.grid(True, color=RULE, lw=0.6)
+    ax.set_axisbelow(True)
+    clean_axes(ax)
+
+    # Qué decide cada conjunto / what each split decides
+    diagram_axes(ax2, 10, 9)
+    ax2.text(0.1, 8.6, t["uses"], fontsize=9.6, fontweight="bold", color=INK, va="center")
+    rows = [(t["split_train"], t["split_train_use"], GRAY, INK_SOFT),
+            (t["split_val"], t["split_val_use"], OK, INK),
+            (t["split_test"], t["split_test_use"], AMBER, INK)]
+    for i, (name, use, edge, color) in enumerate(rows):
+        y = 5.7 - i * 2.75
+        box(ax2, 0.1, y, 2.6, 2.3, name, edge=edge, fill=edge, size=9.2, color="white" if edge == OK else INK,
+            weight="bold")
+        box(ax2, 2.9, y, 7.0, 2.3, use, edge=RULE, fill="white", size=8.8, color=color)
+
+    fig.suptitle(t["plan_title"], x=0.01, ha="left", fontsize=10.2, fontweight="bold", color=INK)
+    fig.text(0.99, 0.01, t["plan_note"], ha="right", fontsize=8, color=MUTED)
+    fig.subplots_adjust(left=0.08, right=0.99, top=0.84, bottom=0.17)
+    save(fig, out, "tuning-plan")
+
+
+# ─── 5. Regularización / regularization ────────────────────────────────────────
+def chart_regularization_curves(t, out):
+    rng = np.random.default_rng(11)
+    e = np.arange(1, 61)
+
+    def noisy(y):
+        wiggle = np.convolve(rng.normal(0, 0.012, e.size + 4), np.ones(5) / 5, mode="valid")
+        return y + wiggle
+
+    train_raw = noisy(0.04 + 0.86 * np.exp(-e / 9))
+    val_raw = noisy(0.30 + 0.60 * np.exp(-e / 6) + 0.0065 * np.maximum(e - 16, 0))
+    train_reg = noisy(0.24 + 0.66 * np.exp(-e / 10))
+    val_reg = noisy(0.31 + 0.62 * np.exp(-e / 9) + 0.0005 * np.maximum(e - 30, 0))
+
+    fig = plt.figure(figsize=(WIDTH_IN, 4.9), dpi=DPI)
+    gs = fig.add_gridspec(2, 2, height_ratios=[3.2, 1], hspace=0.55, wspace=0.12)
+    panels = [(fig.add_subplot(gs[0, 0]), t["reg_without"], train_raw, val_raw, False),
+              (fig.add_subplot(gs[0, 1]), t["reg_with"], train_reg, val_reg, True)]
+    for ax, title, train, val, regularized in panels:
+        ax.plot(e, train, color=MUTED, lw=1.8, label=t["train"])
+        ax.plot(e, val, color=ACCENT, lw=2.2, label=t["val"])
+        gap_x = 57
+        i = gap_x - 1
+        lo, hi = sorted((train[i], val[i]))
+        if regularized:  # brecha pequeña: un trazo, sin puntas de flecha / small gap: a bar, no arrowheads
+            ax.plot([gap_x, gap_x], [lo, hi], color=OK, lw=3, solid_capstyle="butt")
+        else:
+            ax.annotate("", xy=(gap_x, lo), xytext=(gap_x, hi),
+                        arrowprops=dict(arrowstyle="<|-|>", color=ACCENT, lw=1.2))
+        ax.text(gap_x - 2.5, (lo + hi) / 2 + (0.02 if not regularized else 0.12),
+                t["reg_gap_small"] if regularized else t["reg_gap_big"], ha="right", va="center", fontsize=8.6,
+                color=OK if regularized else ACCENT, linespacing=1.3)
+        if not regularized:
+            best = int(np.argmin(val)) + 1
+            ax.axvline(best, color=INK, lw=1.1, ls=(0, (3, 2)))
+            ax.text(best + 1.5, 0.93, t["reg_stop"], fontsize=8.6, color=INK, va="top", linespacing=1.3)
+        ax.set_xlim(0, 60)
+        ax.set_ylim(0, 1.0)
+        ax.set_title(title, fontsize=9.8, loc="left", color=INK, fontweight="bold")
+        ax.set_xlabel(t["reg_epoch"])
+        ax.yaxis.set_major_formatter(lambda v, _: fmt(v, t, 1))
+        ax.yaxis.grid(True, color=RULE, lw=0.6)
+        ax.set_axisbelow(True)
+        clean_axes(ax)
+    panels[0][0].set_ylabel(t["reg_loss"])
+    panels[1][0].tick_params(labelleft=False)
+    panels[0][0].legend(frameon=False, fontsize=8.6, loc="upper right", bbox_to_anchor=(1, 0.8))
+
+    # Dónde actúa cada técnica / where each technique acts
+    strip = fig.add_subplot(gs[1, :])
+    diagram_axes(strip, 16.2, 2.4)
+    items = [(t["reg_l1"], t["reg_l1_use"]), (t["reg_l2"], t["reg_l2_use"]), (t["reg_drop"], t["reg_drop_use"]),
+             (t["reg_es"], t["reg_es_use"])]
+    w, gap = 3.6, 0.55
+    for k, (name, use) in enumerate(items):
+        x = 0.1 + k * (w + gap)
+        box(strip, x, 0.2, w, 1.9, "", edge=RULE, fill=SURFACE, lw=1.1)
+        strip.text(x + w / 2, 1.72, name, ha="center", va="center", fontsize=9.4, fontweight="bold", color=INK)
+        fit_to(strip.text(x + w / 2, 1.28, use, ha="center", va="top", fontsize=8.6, color=INK_SOFT,
+                          multialignment="center"), w - 0.4, 0.95)
+
+    fig.suptitle(t["reg_title"], x=0.01, ha="left", fontsize=10.2, fontweight="bold", color=INK)
+    fig.text(0.99, 0.01, t["reg_note"], ha="right", fontsize=8, color=MUTED)
+    fig.subplots_adjust(left=0.08, right=0.99, top=0.88, bottom=0.07)
+    save(fig, out, "regularization-curves")
+
+
+CHARTS = [chart_early_stopping, chart_hpo_strategies, chart_spot_checkpoints, chart_tuning_plan,
+          chart_regularization_curves]
 
 if __name__ == "__main__":
     cli(TEXT, CHARTS)
